@@ -878,7 +878,16 @@ Fixpoint interp (r : regexp) {struct r} : language :=
 (*     regular language:                                                *)
 
 Lemma regular_regexp r : regular (interp r).
-Proof. todo. Qed.
+Proof.
+induction r; simpl.
+apply REmpty.
+apply REmp_word.
+apply RLetter.
+apply RUnion; done.
+apply RConcatenation; done.
+apply RKleene. 
+done.
+Qed.
 
 (* Additional lemmas to prove Q9 *)
 Lemma eqL_langU L1 G1 L2 G2 : (L1 =L L2) /\ (G1 =L G2) -> langU L1 G1 =L langU L2 G2.
@@ -986,10 +995,104 @@ Qed.
 
 (* Q10. write a binary predicate eqR : regexp -> regexp -> Prop s.t.    *)
 (*      eqR r1 r2 iff r1 and r2 are equivalent regexp.                  *)
-
 Definition eqR (r1 r2 : regexp) : Prop := (interp r1) =L (interp r2).
 
 Infix "~" := eqR (at level 90).
+
+Lemma langKn_imply L G n: (forall w, L w -> G w) -> (forall w, langKn L n w -> langKn G n w).
+Proof.
+induction n.
+done.
+simpl.
+move => p w e.
+move: e => [a [b [j [k i]]]].
+rewrite j.
+have k1: G a.
+auto.
+have i1: langKn G n b.
+auto.
+exists a.
+exists b.
+done.
+Qed.
+
+
+Lemma langK_imply L G: (forall w, L w -> G w) -> (forall w, langK L w -> langK G w).
+Proof.
+move => w p [n h].
+exists n.
+apply langKn_imply with L.
+done.
+done.
+Qed.
+
+Lemma union_kleene (r1 r2: regexp) : RE_Kleene(RE_Union r1 r2) ~ RE_Kleene(RE_Concat(RE_Kleene r1)(RE_Kleene r2)).
+Proof.
+move => w.
+simpl.
+split.
+move => h.
+have f: forall w, langU (interp r1) (interp r2) w -> langS (langK (interp r1)) (langK (interp r2)) w.
+move => w0 p.
+move: p => [a | b].
+exists w0.
+exists nil.
+split.
+rewrite app_nil_r.
+done.
+split.
+exists (S 0).
+simpl.
+apply concatL1.
+done.
+exists 0.
+done.
+exists nil.
+exists w0.
+split.
+done.
+split.
+exists 0.
+simpl.
+done.
+exists (S 0).
+simpl.
+apply concatL1.
+done.
+
+apply langK_imply with (langU (interp r1) (interp r2) ).
+done.
+done.
+have f: forall w0, langS (langK (interp r1)) (langK (interp r2)) w0 -> langK (langU (interp r1) (interp r2)) w0.
+move => w0.
+move => [w1 [w2 [p [h g]]]].
+move: h => [n h].
+move: g => [m g].
+exists (n + m).
+apply langKn_app.
+exists w1.
+exists w2.
+split.
+done.
+split.
+apply langKn_imply with (interp r1).
+move => w3 p3.
+left. done.
+done.
+apply langKn_imply with (interp r2).
+move => w3 p3.
+right. done.
+done.
+have g: forall w0,
+    langK (langS (langK (interp r1)) (langK (interp r2))) w0 -> langK (langK (langU (interp r1) (interp r2))) w0.
+apply langK_imply.
+done.
+have h: langK (langK (langU (interp r1) (interp r2))) w -> langK (langU (interp r1) (interp r2)) w.
+apply langKK.
+move => q.
+auto.
+Qed.
+
 
 (* Q11. state and prove the following regexp equivalence:               *)
 (*           (a|b)* ~ ( a*b* )*                                         *)
