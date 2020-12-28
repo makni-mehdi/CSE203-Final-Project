@@ -295,27 +295,39 @@ done.
 Qed.
 
 (* Additional lemmas to prove langKK *)
-Lemma concat_to_l G H: forall L, G =L H -> langS L G =L langS L H.
+Lemma eqL_concat_l L G W: L =L G -> langS W L =L langS W G.
 Proof.
-move => L e.
+move => p w.
 split.
-+ move => [w1 [w2 [h [g f]]]].
-exists w1.
-exists w2.
+move => [i [j [e [f h]]]].
+rewrite e.
+exists i. 
+exists j.
+rewrite -p.
+done.
+move => [i [j [e [f h]]]].
+rewrite e.
+exists i. 
+exists j.
+rewrite p.
+done.
+Qed.
+
+Lemma eqL_concat_r L G W: L =L G -> langS L W =L langS G W.
+Proof.
+move => p w.
 split.
+move => [i [j [e [f h]]]].
+rewrite e.
+exists i. 
+exists j.
+rewrite -p.
 done.
-split.
-done.
-apply e.
-done.
-+ move => [w1 [w2 [h [g f]]]].
-exists w1.
-exists w2.
-split.
-done.
-split.
-done.
-apply e.
+move => [i [j [e [f h]]]].
+rewrite e.
+exists i. 
+exists j.
+rewrite p.
 done.
 Qed.
 
@@ -331,7 +343,7 @@ have e : langS (langS L (langKn L n)) (langKn L m)  w <-> langS L (langS (langKn
 apply concatA.
 apply iff_trans with (langS L (langS (langKn L n) (langKn L m)) w).
 apply e.
-apply concat_to_l.
+apply eqL_concat_l.
 apply IHn. 
 Qed.
 
@@ -426,7 +438,7 @@ Inductive regular : language -> Prop :=
 | RConcatenation L G of regular L & regular G: regular(langS L G)
 | RKleene L of regular L: regular (langK L).
 
-Lemma eq_word_concat a w : langW (a::w) =L (langS (langA a) (langW w)).
+Lemma eqL_word_concat a w : langW (a::w) =L (langS (langA a) (langW w)).
 Proof.
 move => g.
 split; case g; try done.
@@ -476,43 +488,7 @@ apply p.
 apply h.
 Qed.
 
-Lemma eqL_langS L G W: L =L G -> langS W L =L langS W G.
-Proof.
-move => p w.
-split.
-move => [i [j [e [f h]]]].
-rewrite e.
-exists i. 
-exists j.
-rewrite -p.
-done.
-move => [i [j [e [f h]]]].
-rewrite e.
-exists i. 
-exists j.
-rewrite p.
-done.
-Qed.
-
-Lemma eqL_langS1 L G W: L =L G -> langS L W =L langS G W.
-Proof.
-move => p w.
-split.
-move => [i [j [e [f h]]]].
-rewrite e.
-exists i. 
-exists j.
-rewrite -p.
-done.
-move => [i [j [e [f h]]]].
-rewrite e.
-exists i. 
-exists j.
-rewrite p.
-done.
-Qed.
-
-Lemma langK_commutative L n: langS L (langKn L n) =L langS (langKn L n) L.
+Lemma langKn_langS L n: langS L (langKn L n) =L langS (langKn L n) L.
 Proof.
 induction n.
 simpl.
@@ -530,7 +506,7 @@ have j: langS (langS L (langKn L n)) L =L langS L (langS (langKn L n) L).
 apply concatA.
 have e: langS L (langS (langKn L n) L) =L langS L (langS L (langKn L n)).
 apply eqL_commutative.
-apply eqL_langS.
+apply eqL_concat_l.
 done.
 have final: langS (langS L (langKn L n)) L =L langS L (langS (langKn L n) L) ->
 langS L (langS (langKn L n) L) =L langS L (langS L (langKn L n)) -> 
@@ -539,7 +515,7 @@ apply eqL_transitive.
 auto.
 Qed.
 
-Lemma langM_eq_langS L G: langS (langM L) (langM G) =L langM (langS G L).
+Lemma langM_langS L G: langS (langM L) (langM G) =L langM (langS G L).
 Proof.
 split.
 move => [i [j [e [f h]]]].
@@ -572,7 +548,7 @@ done.
 Qed.
 
 
-Lemma langKn_langM_commutative L n: langKn (langM L) n =L langM (langKn L n).
+Lemma langKn_langM L n: langKn (langM L) n =L langM (langKn L n).
 Proof.
 induction n.
 split.
@@ -597,10 +573,10 @@ done.
 done.
 simpl.
 have i: langS (langKn (langM L) n)(langM L) =L langS (langM (langKn L n))(langM L).
-apply eqL_langS1.
+apply eqL_concat_r.
 done.
 have j: langS (langM (langKn L n))(langM L) =L langM (langS L (langKn L n)).
-apply langM_eq_langS.
+apply langM_langS.
 have k:langM (langS L (langKn L n)) =L langS (langKn (langM L) n) (langM L).
 have f: langS (langKn (langM L) n) (langM L) =L langS (langM (langKn L n)) (langM L) ->
 langS (langM (langKn L n)) (langM L) =L langM (langS L (langKn L n)) ->
@@ -609,7 +585,7 @@ apply eqL_transitive.
 auto.
 have h: langS (langKn (langM L) n) (langM L) =L langS (langM L)(langKn (langM L) n).
 apply eqL_commutative.
-apply langK_commutative.
+apply langKn_langS.
 have final: langM (langS L (langKn L n)) =L langS (langKn (langM L) n) (langM L) ->
 langS (langKn (langM L) n) (langM L) =L langS (langM L) (langKn (langM L) n) ->
 langS (langM L) (langKn (langM L) n) =L langM (langS L (langKn L n)).
@@ -628,7 +604,7 @@ apply RLetter.
 have f: regular (langS (langA a) (langW w)).
 apply RConcatenation; auto.
 have j: langW (a::w) =L langS (langA a) (langW w).
-apply eq_word_concat.
+apply eqL_word_concat.
 apply REq with (langS (langA a) (langW w)).
 done.
 done.
@@ -799,19 +775,19 @@ done.
 rewrite m.
 exists (S n).
 simpl.
-apply langK_commutative.
+apply langKn_langS.
 exists (rev b).
 exists (rev a).
 have j1: L (rev a).
 done.
 have k1: langKn L n (rev b).
-apply langKn_langM_commutative.
+apply langKn_langM.
 done.
 done.
 done.
 move => [n i].
 exists n.
-apply langKn_langM_commutative.
+apply langKn_langM.
 done.
 have final: regular (langK (langM L)).
 apply RKleene.
