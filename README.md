@@ -27,4 +27,8 @@ Lemma eqL_langU L1 G1 L2 G2 : (L1 =L L2) /\ (G1 =L G2) -> langU L1 G1 =L langU L
 Lemma eqL_langS L1 G1 L2 G2 : (L1 =L L2) /\ (G1 =L G2) -> langS L1 G1 =L langS L2 G2.
 Lemma eqL_langKn L1 L2 n: L1 =L L2 -> langKn L1 n =L langKn L2 n.
 Lemma eqL_langK L1 L2: L1 =L L2 -> langK L1 =L langK L2.
+Lemma langKn_imply L G n: (forall w, L w -> G w) -> (forall w, langKn L n w -> langKn G n w).
+Lemma langK_imply L G: (forall w, L w -> G w) -> (forall w, langK L w -> langK G w).
+Lemma union_kleene (r1 r2: regexp) : RE_Kleene(RE_Union r1 r2) ~ RE_Kleene(RE_Concat(RE_Kleene r1)(RE_Kleene r2)).
+
 ```
