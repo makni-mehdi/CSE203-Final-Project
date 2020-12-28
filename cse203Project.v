@@ -999,6 +999,8 @@ Definition eqR (r1 r2 : regexp) : Prop := (interp r1) =L (interp r2).
 
 Infix "~" := eqR (at level 90).
 
+(* Additional lemmas for Q11 *)
+
 Lemma langKn_imply L G n: (forall w, L w -> G w) -> (forall w, langKn L n w -> langKn G n w).
 Proof.
 induction n.
@@ -1025,6 +1027,10 @@ apply langKn_imply with L.
 done.
 done.
 Qed.
+
+
+(* Q11. state and prove the following regexp equivalence:               *)
+(*           (a|b)* ~ ( a*b* )*                                         *)
 
 Lemma union_kleene (r1 r2: regexp) : RE_Kleene(RE_Union r1 r2) ~ RE_Kleene(RE_Concat(RE_Kleene r1)(RE_Kleene r2)).
 Proof.
@@ -1092,10 +1098,6 @@ apply langKK.
 move => q.
 auto.
 Qed.
-
-
-(* Q11. state and prove the following regexp equivalence:               *)
-(*           (a|b)* ~ ( a*b* )*                                         *)
 
 (* ==================================================================== *)
 (*                          REGEXP MATCHING                             *)
