@@ -1,5 +1,5 @@
 (* -------------------------------------------------------------------- *)
-Require Import ssreflect ssrbool List.
+Require Import ssreflect ssrbool Bool List.
 
 Set Implicit Arguments.
 
@@ -1127,12 +1127,67 @@ Qed.
 (*                                                                      *)
 (*      ∀ r, contains0 r ⇔ ε ∈ [e]                                      *)
 
-Definition contains0 (r : regexp) : bool := todo.
+Fixpoint contains0 (r : regexp) : bool := 
+  match r with
+  | RE_Empty => false
+  | RE_Void => true
+  | RE_Atom a => false
+  | RE_Union r1 r2 => (contains0 r1) || (contains0 r2)
+  | RE_Concat r1 r2 => (contains0 r1) && (contains0 r2)
+  | RE_Kleene r1 => true
+  end.
 
 (* Q13. prove that your definition of `contains0` is correct:           *)
 
 Lemma contains0_ok r : contains0 r <-> interp r nil.
-Proof. todo. Qed.
+Proof.
+split.
+move => p.
+induction r; try done.
+simpl in p.
+simpl.
+move/orP: p => p.
+move: p => [a | b].
+left.
+auto.
+right.
+auto.
+simpl in p.
+move/andP: p => p.
+move: p => [a b].
+simpl.
+exists nil.
+exists nil.
+auto.
+simpl.
+exists 0.
+done.
+
+induction r; try done.
+move => p.
+simpl.
+simpl in p.
+move: p => [a | b].
+apply/orP.
+left.
+auto.
+apply/orP.
+right.
+auto.
+
+simpl.
+move => [w [k [h [j i]]]].
+apply/andP.
+have e: w = nil /\ k = nil.
+apply app_eq_nil.
+done.
+move: e => [e1 e2].
+rewrite e1 in j.
+rewrite e2 in i.
+split.
+auto.
+auto.
+Qed.
 
 (* We give below the definition of the Brzozowski's derivative:         *)
 (*                                                                      *)
@@ -1158,18 +1213,156 @@ Parameter Aeq : A -> A -> bool.
 (* Here, `Aeq x y` has to be read as `Aeq x y = true`                   *)
 Axiom Aeq_dec : forall (x y : A), Aeq x y <-> x = y.
 
-Definition Brzozowski (x : A) (r : regexp) : regexp := todo.
+Fixpoint Brzozowski (x : A) (r : regexp) : regexp :=
+  match r with
+  | RE_Empty => RE_Empty
+  | RE_Void => RE_Empty
+  | RE_Atom y => if Aeq x y then RE_Void else RE_Empty
+  | RE_Union r1 r2 => RE_Union (Brzozowski x r1) (Brzozowski x r2)
+  | RE_Concat r1 r2 => 
+    if contains0 r1 then RE_Union (RE_Concat (Brzozowski x r1) r2) (Brzozowski x r2) 
+    else RE_Concat (Brzozowski x r1) r2
+  | RE_Kleene r1 => RE_Concat (Brzozowski x r1) (RE_Kleene r1)
+  end.
 
 (* Q15. write a function `rmatch` s.t. `rmatch r w` checks wether a     *)
 (*      word `w` matches a given regular expression `r`.                *)
 
-Definition rmatch (r : regexp) (w : word) : bool := todo.
+Fixpoint rmatch (r : regexp) (w : word) : bool := 
+  match w with 
+  | nil => contains0 r
+  | cons x w1 => rmatch (Brzozowski x r) w1 
+  end.
 
 (* Q16. show that the `Brzozowski` function is correct.                 *)
 
 Lemma Brzozowski_correct (x : A) (w : word) (r : regexp) :
   interp (Brzozowski x r) w -> interp r (x :: w).
-Proof. todo. Qed.
+Proof.
+induction w.
+move => p.
+induction r; try done.
+  + case e: (Aeq x a).
+  simpl.
+  simpl in p.
+  rewrite e in p.
+  simpl in p.
+  have xa: x = a.
+  apply Aeq_dec.
+  done.
+  rewrite xa.
+  done.
+  simpl.
+  simpl in p.
+  rewrite e in p.
+  simpl in p.
+  done.
+
+  + simpl.
+  simpl in p.
+  move: p => [a | b].
+  left. auto.
+  right. auto.
+
+  + simpl.
+  simpl in p.
+  case e: (contains0 r1).
+  rewrite e in p.
+  simpl in p.
+  move: p => [a | b].
+  move: a => [w1 [w2 [h [f g]]]].
+  exists (x::w1).
+  exists w2.
+  split.
+  rewrite h.
+  rewrite -app_comm_cons.
+  done.
+  split.
+  have eq_nil: w1 = nil /\ w2 = nil.
+  apply app_eq_nil.
+  done.
+  move: eq_nil => [c d].
+  rewrite c.
+  rewrite c in f.
+  auto.
+  auto.
+
+  exists nil.
+  exists (x::nil).
+  split.
+  done.
+  split.
+  apply contains0_ok.
+  done.
+  auto.
+
+  rewrite e in p.
+  simpl in p.
+  move: p => [w1 [w2 [h [f g]]]].
+  have eq_nil: w1 = nil /\ w2 = nil.
+  apply app_eq_nil.
+  done.
+  move: eq_nil => [c d].
+  exists (x::nil).
+  exists nil.
+  split.
+  done.
+  split.
+  rewrite c in f.
+  auto.
+  rewrite d in g.
+  auto.
+
+  + admit.
+
++ move => p.
+induction r; try done.
+
+case e: (Aeq x a0).
+simpl.
+simpl in p.
+rewrite e in p.
+simpl in p.
+rewrite p.
+have xa: x = a.
+apply Aeq_dec.
+done.
+rewrite xa.
+done.
+
+simpl.
+simpl in p.
+rewrite e in p.
+simpl in p.
+done.
+
+simpl.
+simpl in p.
+simpl in IHw.
+admit.
+
+simpl.
+simpl in p.
+case e: (contains0 r1).
+rewrite e in p.
+simpl in p.
+move: p => [c | d].
+move: c => [w1 [w2 [h [f g]]]].
+simpl in IHw.
+rewrite e in IHw.
+simpl in IHw.
+
+
+exists (x::w1).
+exists w2.
+split.
+rewrite h.
+rewrite -app_comm_cons.
+done.
+split.
+
+
+Qed.
 
 (* Q17. show that `rmatch` is correct.                                  *)
 
