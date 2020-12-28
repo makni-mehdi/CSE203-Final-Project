@@ -22,4 +22,9 @@ Lemma eqL_transitive L G W: L =L G -> G =L W -> W =L L.
 Lemma langKn_langS L n: langS L (langKn L n) =L langS (langKn L n) L.
 Lemma langM_langS L G: langS (langM L) (langM G) =L langM (langS G L).
 Lemma langKn_langM L n: langKn (langM L) n =L langM (langKn L n).
+
+Lemma eqL_langU L1 G1 L2 G2 : (L1 =L L2) /\ (G1 =L G2) -> langU L1 G1 =L langU L2 G2.
+Lemma eqL_langS L1 G1 L2 G2 : (L1 =L L2) /\ (G1 =L G2) -> langS L1 G1 =L langS L2 G2.
+Lemma eqL_langKn L1 L2 n: L1 =L L2 -> langKn L1 n =L langKn L2 n.
+Lemma eqL_langK L1 L2: L1 =L L2 -> langK L1 =L langK L2.
 ```

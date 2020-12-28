@@ -844,7 +844,9 @@ Inductive regexp : Type :=
 | RE_Atom  : A -> regexp
 
   (* TO BE COMPLETED *)
-.
+| RE_Union : regexp -> regexp -> regexp
+| RE_Concat : regexp -> regexp -> regexp
+| RE_Kleene : regexp -> regexp.
 
 Implicit Types (r : regexp).
 
@@ -864,7 +866,12 @@ Implicit Types (r : regexp).
 
 Fixpoint interp (r : regexp) {struct r} : language :=
   match r with
-  | _ => todo
+  | RE_Empty => lang0
+  | RE_Void => lang1
+  | RE_Atom a => langA a
+  | RE_Union r1 r2 => langU (interp r1) (interp r2)
+  | RE_Concat r1 r2 => langS (interp r1) (interp r2)
+  | RE_Kleene r1 => langK (interp r1)
   end.
 
 (* Q8. show that the interpretation of a regular expression is a        *)
@@ -873,11 +880,106 @@ Fixpoint interp (r : regexp) {struct r} : language :=
 Lemma regular_regexp r : regular (interp r).
 Proof. todo. Qed.
 
+(* Additional lemmas to prove Q9 *)
+Lemma eqL_langU L1 G1 L2 G2 : (L1 =L L2) /\ (G1 =L G2) -> langU L1 G1 =L langU L2 G2.
+Proof.
+move => [p q] w.
+split.
+move => [hl | hg].
+left. apply p. done.
+right. apply q. done.
+move => [hl | hg].
+left. apply p. done.
+right. apply q. done.
+Qed.
+
+Lemma eqL_langS L1 G1 L2 G2 : (L1 =L L2) /\ (G1 =L G2) -> langS L1 G1 =L langS L2 G2.
+Proof.
+move => [p q] w.
+split.
+move => [w1 [w2 [hw [hl hg]]]].
+exists w1. exists w2.
+split.
+done.
+split.
+apply p. done.
+apply q. done.
+move => [w1 [w2 [hw [hl hg]]]].
+exists w1. exists w2.
+split.
+done.
+split.
+apply p. done.
+apply q. done.
+Qed.
+
+Lemma eqL_langKn L1 L2 n: L1 =L L2 -> langKn L1 n =L langKn L2 n.
+Proof.
+move => p.
+induction n.
+done.
+simpl.
+apply eqL_langS.
+split.
+done.
+done.
+Qed.
+
+Lemma eqL_langK L1 L2: L1 =L L2 -> langK L1 =L langK L2.
+Proof.
+move => p.
+split.
+move => [n h].
+exists n.
+apply eqL_langKn with L1.
+apply eqL_commutative.
+done.
+done.
+move => [n h].
+exists n.
+apply eqL_langKn with L2.
+done.
+done.
+Qed.
+
 (* Q9. show that any regular language can be interpreted as a           *)
 (*     regular expression:                                              *)
 
 Lemma regexp_regular L : regular L -> exists r, L =L interp r.
-Proof. todo. Qed.
+Proof.
+move => p.
+induction p.
++ move: IHp => [r f].
+exists r.
+apply eqL_transitive with L.
+apply eqL_commutative.
+done.
+apply eqL_commutative.
+done.
++ exists RE_Empty.
+done.
++ exists RE_Void.
+done.
++ exists (RE_Atom x).
+done.
++ move: IHp1 => [r1 h1].
+move: IHp2 => [r2 h2].
+exists (RE_Union r1 r2).
+simpl.
+apply eqL_langU.
+done.
++ move: IHp1 => [r1 h1].
+move: IHp2 => [r2 h2].
+exists (RE_Concat r1 r2).
+simpl.
+apply eqL_langS.
+done.
++ move: IHp => [r h].
+exists (RE_Kleene r).
+simpl.
+apply eqL_langK.
+done.
+Qed.
 
 (* Of course, it may happen that two regular expressions represent      *)
 (* the same language: r1 ~ r2 iff [r1] = [r2].                          *)
@@ -885,7 +987,7 @@ Proof. todo. Qed.
 (* Q10. write a binary predicate eqR : regexp -> regexp -> Prop s.t.    *)
 (*      eqR r1 r2 iff r1 and r2 are equivalent regexp.                  *)
 
-Definition eqR (r1 r2 : regexp) : Prop := todo.
+Definition eqR (r1 r2 : regexp) : Prop := (interp r1) =L (interp r2).
 
 Infix "~" := eqR (at level 90).
 
