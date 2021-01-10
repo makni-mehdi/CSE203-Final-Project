@@ -1236,139 +1236,104 @@ Fixpoint rmatch (r : regexp) (w : word) : bool :=
 
 (* Q16. show that the `Brzozowski` function is correct.                 *)
 
-Lemma Brzozowski_correct (x : A) (w : word) (r : regexp) :
-  interp (Brzozowski x r) w -> interp r (x :: w).
+Lemma Brzozowski_correct_aux (x : A) (r : regexp) :
+  forall w, interp (Brzozowski x r) w -> interp r (x :: w).
 Proof.
-induction w.
+induction r; try done; move => w.
 move => p.
-induction r; try done.
-  + case e: (Aeq x a).
-  simpl.
-  simpl in p.
-  rewrite e in p.
-  simpl in p.
-  have xa: x = a.
-  apply Aeq_dec.
-  done.
-  rewrite xa.
-  done.
-  simpl.
-  simpl in p.
-  rewrite e in p.
-  simpl in p.
-  done.
-
-  + simpl.
-  simpl in p.
-  move: p => [a | b].
-  left. auto.
-  right. auto.
-
-  + simpl.
-  simpl in p.
-  case e: (contains0 r1).
-  rewrite e in p.
-  simpl in p.
-  move: p => [a | b].
-  move: a => [w1 [w2 [h [f g]]]].
-  exists (x::w1).
-  exists w2.
-  split.
-  rewrite h.
-  rewrite -app_comm_cons.
-  done.
-  split.
-  have eq_nil: w1 = nil /\ w2 = nil.
-  apply app_eq_nil.
-  done.
-  move: eq_nil => [c d].
-  rewrite c.
-  rewrite c in f.
-  auto.
-  auto.
-
-  exists nil.
-  exists (x::nil).
-  split.
-  done.
-  split.
-  apply contains0_ok.
-  done.
-  auto.
-
-  rewrite e in p.
-  simpl in p.
-  move: p => [w1 [w2 [h [f g]]]].
-  have eq_nil: w1 = nil /\ w2 = nil.
-  apply app_eq_nil.
-  done.
-  move: eq_nil => [c d].
-  exists (x::nil).
-  exists nil.
-  split.
-  done.
-  split.
-  rewrite c in f.
-  auto.
-  rewrite d in g.
-  auto.
-
-  + admit.
-
-+ move => p.
-induction r; try done.
-
-case e: (Aeq x a0).
 simpl.
 simpl in p.
+
++ case e: (Aeq x a).
 rewrite e in p.
 simpl in p.
 rewrite p.
-have xa: x = a.
+have i: x = a.
 apply Aeq_dec.
 done.
-rewrite xa.
+rewrite i.
 done.
-
-simpl.
-simpl in p.
 rewrite e in p.
 simpl in p.
 done.
 
-simpl.
++ move => p.
 simpl in p.
-simpl in IHw.
-admit.
+move: p => [p1 | p2].
+simpl.
+left. auto.
+right. auto.
 
-simpl.
++ move => p.
 simpl in p.
+simpl.
 case e: (contains0 r1).
 rewrite e in p.
 simpl in p.
-move: p => [c | d].
-move: c => [w1 [w2 [h [f g]]]].
-simpl in IHw.
-rewrite e in IHw.
-simpl in IHw.
-
-
+move: p => [p1 | p2].
+move: p1 => [w1 [w2 [i [j k]]]].
 exists (x::w1).
 exists w2.
 split.
-rewrite h.
 rewrite -app_comm_cons.
+rewrite -i.
+done.
+split. 
+auto.
+auto.
+
+exists nil.
+exists (x::w).
+split.
 done.
 split.
+apply contains0_ok.
+done.
+auto.
+rewrite e in p.
+simpl in p.
+move: p => [w1 [w2 [i [j k]]]].
+exists (x::w1).
+exists w2.
+split.
+rewrite -app_comm_cons.
+rewrite -i.
+done.
+split. 
+auto.
+auto.
 
-
++ move => p.
+simpl in p.
+move: p => [w1 [w2 [i [j [n k]]]]].
+exists (1+n).
+simpl.
+exists (x::w1).
+exists w2.
+split.
+rewrite -app_comm_cons.
+rewrite i.
+done.
+split.
+auto.
+auto. 
 Qed.
+
+
+Lemma Brzozowski_correct (x : A) (w : word) (r : regexp) :
+   interp (Brzozowski x r) w -> interp r (x :: w).
+Proof.
+apply Brzozowski_correct_aux.
+Qed.
+
 
 (* Q17. show that `rmatch` is correct.                                  *)
 
 Lemma rmatch_correct (r : regexp) (w : word):
   rmatch r w -> interp r w.
-Proof. todo. Qed.
+Proof.
+Admitted.
+
 
 (* Q18. (HARD - OPTIONAL) show that `rmatch` is complete.               *)
 
