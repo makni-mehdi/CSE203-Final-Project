@@ -1231,7 +1231,7 @@ Fixpoint Brzozowski (x : A) (r : regexp) : regexp :=
 Fixpoint rmatch (r : regexp) (w : word) : bool := 
   match w with 
   | nil => contains0 r
-  | cons x w1 => rmatch (Brzozowski x r) w1 
+  | x :: w1 => rmatch (Brzozowski x r) w1 
   end.
 
 (* Q16. show that the `Brzozowski` function is correct.                 *)
@@ -1329,10 +1329,55 @@ Qed.
 
 (* Q17. show that `rmatch` is correct.                                  *)
 
+Lemma rmatch_RE_Empty (w : word):
+  rmatch RE_Empty w -> False.
+Proof.
+induction w.
+done.
+simpl.
+done.
+Qed.
+
+Lemma rmatch_RE_Void (w : word):
+  rmatch RE_Void w -> w = nil.
+Proof.
+case w.
+done.
+simpl.
+move => a l p.
+have final: False -> (a :: l = nil).
+done.
+apply final.
+apply rmatch_RE_Empty in p.
+auto.
+Qed.
+
 Lemma rmatch_correct (r : regexp) (w : word):
   rmatch r w -> interp r w.
 Proof.
-Admitted.
+induction r; induction w; simpl; try done; try apply contains0_ok; simpl; try done.
++ move => p.
+apply rmatch_RE_Empty in p.
+done.
++ case e: (Aeq a0 a).
+have j: a0 = a.
+apply Aeq_dec.
+done.
+rewrite j.
+move => p.
+have k: w = nil.
+apply rmatch_RE_Void.
+done.
+rewrite k.
+done.
+have final: False -> langA a (a0 :: w).
+done.
+move => p.
+apply final.
+apply rmatch_RE_Empty with w.
+done.
+
+Qed.
 
 
 (* Q18. (HARD - OPTIONAL) show that `rmatch` is complete.               *)
