@@ -1352,36 +1352,217 @@ apply rmatch_RE_Empty in p.
 auto.
 Qed.
 
-Lemma rmatch_correct (r : regexp) (w : word):
-  rmatch r w -> interp r w.
+Lemma rmatch_Union:
+  forall w r1 r2, rmatch (RE_Union r1 r2) w = true -> rmatch r1 w = true \/ rmatch r2 w = true.
 Proof.
-induction r; induction w; simpl; try done; try apply contains0_ok; simpl; try done.
-+ move => p.
+induction w; move => r1 r2; try done.
+move => p.
+simpl.
+simpl in p.
+move/orP: p => p.
+move: p => [p1 | p2].
+left. done.
+right. done.
+move => p.
+simpl in p.
+simpl.
+apply IHw.
+done.
+Qed.
+
+Lemma rmatch_Concat:
+  forall w r1 r2, rmatch (RE_Concat r1 r2) w = true -> exists w1 w2, w = w1 ++ w2 /\ rmatch r1 w1 /\ rmatch r2 w2.
+Proof.
+induction w; move => r1 r2; try done.
+move => p.
+exists nil.
+exists nil.
+split.
+done.
+simpl in p.
+simpl.
+move/andP: p => p.
+done.
+simpl.
+case e: (contains0 r1).
+move => p.
+have i: rmatch (RE_Concat (Brzozowski a r1) r2) w \/ rmatch (Brzozowski a r2) w.
+apply rmatch_Union.
+done.
+move: i => [i1 | i2].
+have j1: exists w1 w2, w = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2.
+apply IHw.
+done.
+move: j1 => [w1 [w2 h]].
+move: h => [h1 [h2 h3]].
+exists (a::w1).
+exists w2.
+split.
+rewrite h1.
+apply app_comm_cons.
+split.
+simpl.
+done.
+done.
+exists nil.
+exists (a::w).
+split.
+done.
+split. 
+simpl.
+done.
+simpl.
+done.
+move => p.
+have j: (exists w1 w2, w = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2).
+auto.
+move: j => [w1 [w2 h]].
+move: h => [h1 [h2 h3]].
+exists (a::w1).
+exists w2.
+split.
+rewrite h1.
+apply app_comm_cons.
+split.
+simpl.
+done.
+done.
+Qed.
+
+Lemma rmatch_correct_aux (r : regexp):
+  forall w, rmatch r w -> interp r w.
+Proof.
+induction r; move => w; case w; simpl; try done; try apply contains0_ok; simpl; try done.
++ move => a l p.
 apply rmatch_RE_Empty in p.
 done.
-+ case e: (Aeq a0 a).
++  move => a l p.
+have final: False -> lang1 (a :: l).
+done.
+apply final.
+apply rmatch_RE_Empty with l.
+done.
++ move => a0 l p.
+simpl in p.
+case e: (Aeq a0 a).
 have j: a0 = a.
 apply Aeq_dec.
 done.
 rewrite j.
-move => p.
-have k: w = nil.
+rewrite e in p.
+have k: l = nil.
 apply rmatch_RE_Void.
 done.
 rewrite k.
 done.
-have final: False -> langA a (a0 :: w).
+have final: False -> langA a (a0 :: l).
 done.
-move => p.
+rewrite e in p.
 apply final.
-apply rmatch_RE_Empty with w.
+apply rmatch_RE_Empty with l.
 done.
 
-Qed.
++ move => p.
+move/orP: p => p.
+move: p => [p1 | p2].
+left.
+apply contains0_ok.
+done.
+right.
+apply contains0_ok.
+done.
+
++ move => a l p.
+have e: rmatch (Brzozowski a r1) l = true \/ rmatch (Brzozowski a r2) l = true.
+apply rmatch_Union.
+done.
+move: e => [e1 | e2].
+left. auto.
+right. auto.
+
++ move => p.
+move/andP: p => p.
+move: p => [p1 p2].
+exists nil.
+exists nil.
+split.
+done.
+split.
+auto.
+auto.
+
++ move => a l.
+case e: (contains0 r1).
+move => p.
+have f: rmatch (RE_Concat (Brzozowski a r1) r2) l = true \/ rmatch (Brzozowski a r2) l = true.
+apply rmatch_Union.
+done.
+move: f => [f1 | f2].
+have j: exists w1 w2, l = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2.
+apply rmatch_Concat.
+done.
+move: j => [w1 [w2 [h1 [h2 h3]]]].
+exists (a::w1).
+exists w2.
+split.
+rewrite h1.
+apply app_comm_cons.
+split.
+simpl.
+apply IHr1.
+simpl.
+done.
+auto.
+exists nil.
+exists (a::l).
+split.
+done.
+split.
+apply contains0_ok.
+done.
+apply IHr2.
+simpl. auto.
+
+move => p.
+have j: exists w1 w2, l = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2.
+apply rmatch_Concat.
+done.
+move: j => [w1 [w2 [h1 [h2 h3]]]].
+exists (a::w1).
+exists w2.
+split.
+rewrite h1.
+apply app_comm_cons.
+split.
+simpl.
+apply IHr1.
+simpl.
+done.
+auto.
+
++ move => t.
+destruct t.
+exists 0.
+done.
+
++ move => a l p.
+have e: exists w1 w2, l = w1 ++ w2 /\ rmatch (Brzozowski a r) w1 /\ rmatch (RE_Kleene r) w2.
+apply rmatch_Concat.
+done.
+move: e => [w1 [w2 [h1 [h2 h3]]]].
+
+
+Admitted.
+
+
+
+
 
 
 (* Q18. (HARD - OPTIONAL) show that `rmatch` is complete.               *)
 
 Lemma rmatch_complete (r : regexp) (w : word):
   interp r w -> rmatch r w.
+
 Proof. todo. Qed.
+
