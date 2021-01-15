@@ -1329,106 +1329,6 @@ Qed.
 
 (* Q17. show that `rmatch` is correct.                                  *)
 
-Lemma rmatch_RE_Empty (w : word):
-  rmatch RE_Empty w -> False.
-Proof.
-induction w.
-done.
-simpl.
-done.
-Qed.
-
-Lemma rmatch_RE_Void (w : word):
-  rmatch RE_Void w -> w = nil.
-Proof.
-case w.
-done.
-simpl.
-move => a l p.
-have final: False -> (a :: l = nil).
-done.
-apply final.
-apply rmatch_RE_Empty in p.
-auto.
-Qed.
-
-Lemma rmatch_Union:
-  forall w r1 r2, rmatch (RE_Union r1 r2) w = true -> rmatch r1 w = true \/ rmatch r2 w = true.
-Proof.
-induction w; move => r1 r2; try done.
-move => p.
-simpl.
-simpl in p.
-move/orP: p => p.
-move: p => [p1 | p2].
-left. done.
-right. done.
-move => p.
-simpl in p.
-simpl.
-apply IHw.
-done.
-Qed.
-
-Lemma rmatch_Concat:
-  forall w r1 r2, rmatch (RE_Concat r1 r2) w = true -> exists w1 w2, w = w1 ++ w2 /\ rmatch r1 w1 /\ rmatch r2 w2.
-Proof.
-induction w; move => r1 r2; try done.
-move => p.
-exists nil.
-exists nil.
-split.
-done.
-simpl in p.
-simpl.
-move/andP: p => p.
-done.
-simpl.
-case e: (contains0 r1).
-move => p.
-have i: rmatch (RE_Concat (Brzozowski a r1) r2) w \/ rmatch (Brzozowski a r2) w.
-apply rmatch_Union.
-done.
-move: i => [i1 | i2].
-have j1: exists w1 w2, w = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2.
-apply IHw.
-done.
-move: j1 => [w1 [w2 h]].
-move: h => [h1 [h2 h3]].
-exists (a::w1).
-exists w2.
-split.
-rewrite h1.
-apply app_comm_cons.
-split.
-simpl.
-done.
-done.
-exists nil.
-exists (a::w).
-split.
-done.
-split. 
-simpl.
-done.
-simpl.
-done.
-move => p.
-have j: (exists w1 w2, w = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2).
-auto.
-move: j => [w1 [w2 h]].
-move: h => [h1 [h2 h3]].
-exists (a::w1).
-exists w2.
-split.
-rewrite h1.
-apply app_comm_cons.
-split.
-simpl.
-done.
-done.
-Qed.
-
 Lemma rmatch_correct_aux (w: word):
   forall r, rmatch r w -> interp r w.
 Proof.
@@ -1448,6 +1348,8 @@ Lemma rmatch_correct (w: word) (r: regexp):
 Proof.
 apply rmatch_correct_aux.
 Qed.
+
+(* Another Lemma that we use a lot in Q18 *)
 
 Lemma app_inj_head: 
   forall a b (x y: list A), a::x = b::y -> a = b /\ x = y.
@@ -1636,7 +1538,7 @@ Qed.
 
 (* Q18. (HARD - OPTIONAL) show that `rmatch` is complete.               *)
 
-Lemma rmatch_complete (w : word):
+Lemma rmatch_complete_aux (w : word):
   forall r, interp r w -> rmatch r w.
 Proof.
 induction w.
@@ -1650,3 +1552,8 @@ apply Brzozowski_correct_aux2.
 done.
 Qed.
 
+Lemma rmatch_complete (r: regexp) (w : word):
+  interp r w -> rmatch r w.
+Proof.
+apply rmatch_complete_aux.
+Qed.
