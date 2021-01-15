@@ -1429,140 +1429,224 @@ done.
 done.
 Qed.
 
-Lemma rmatch_correct_aux (r : regexp):
-  forall w, rmatch r w -> interp r w.
+Lemma rmatch_correct_aux (w: word):
+  forall r, rmatch r w -> interp r w.
 Proof.
-induction r; move => w; case w; simpl; try done; try apply contains0_ok; simpl; try done.
-+ move => a l p.
-apply rmatch_RE_Empty in p.
+induction w.
+simpl.
+apply contains0_ok.
+
+simpl.
+move => r p.
+apply Brzozowski_correct.
+apply IHw.
 done.
-+  move => a l p.
-have final: False -> lang1 (a :: l).
+Qed.
+
+Lemma rmatch_correct (w: word) (r: regexp):
+  rmatch r w -> interp r w.
+Proof.
+apply rmatch_correct_aux.
+Qed.
+
+Lemma app_inj_head: 
+  forall a b (x y: list A), a::x = b::y -> a = b /\ x = y.
+Proof.
+move => a b x y.
+move =>  p.
+have k: a::(rev(rev x)) = b::(rev(rev y)).
+rewrite rev_involutive.
+rewrite rev_involutive.
 done.
-apply final.
-apply rmatch_RE_Empty with l.
+rewrite -rev_unit in k.
+rewrite -rev_unit in k.
+have i: (rev (rev (rev x ++ a :: nil))) = rev ( rev (rev y ++ b :: nil)).
+rewrite k.
 done.
-+ move => a0 l p.
-simpl in p.
-case e: (Aeq a0 a).
-have j: a0 = a.
+rewrite rev_involutive in i.
+rewrite rev_involutive in i.
+have final: rev x = rev y /\ a = b.
+apply app_inj_tail.
+done.
+destruct final.
+split.
+done.
+have final: rev (rev x) = rev ( rev y ).
+rewrite H.
+done.
+rewrite rev_involutive in final.
+rewrite rev_involutive in final.
+done.
+Qed.
+
+Lemma Brzozowski_correct_aux2 (x : A) (r : regexp) :
+  forall w, interp r (x :: w) -> interp (Brzozowski x r) w.
+Proof.
+induction r; try done.
+move => w.
+simpl.
++ case e: (Aeq x a).
+unfold interp.
+have j: x = a.
 apply Aeq_dec.
 done.
 rewrite j.
-rewrite e in p.
-have k: l = nil.
-apply rmatch_RE_Void.
+unfold langA.
+move => p.
+have k: w = nil.
+have i: a = a /\ w = nil.
+apply app_inj_head.
+done.
+destruct i.
 done.
 rewrite k.
 done.
-have final: False -> langA a (a0 :: l).
+
+simpl.
+unfold langA.
+move => p.
+have f: x = a /\ w = nil.
+apply app_inj_head.
 done.
-rewrite e in p.
-apply final.
-apply rmatch_RE_Empty with l.
+destruct f.
+have g: Aeq x a = true.
+apply Aeq_dec.
+done.
+have j: false.
+rewrite -e.
+rewrite g.
+done.
 done.
 
-+ move => p.
-move/orP: p => p.
++ move => w p.
+simpl in p.
 move: p => [p1 | p2].
-left.
-apply contains0_ok.
-done.
-right.
-apply contains0_ok.
-done.
-
-+ move => a l p.
-have e: rmatch (Brzozowski a r1) l = true \/ rmatch (Brzozowski a r2) l = true.
-apply rmatch_Union.
-done.
-move: e => [e1 | e2].
+simpl.
 left. auto.
 right. auto.
 
-+ move => p.
-move/andP: p => p.
-move: p => [p1 p2].
-exists nil.
-exists nil.
-split.
-done.
-split.
-auto.
-auto.
-
-+ move => a l.
++ move => w p.
+simpl in p.
+simpl.
 case e: (contains0 r1).
-move => p.
-have f: rmatch (RE_Concat (Brzozowski a r1) r2) l = true \/ rmatch (Brzozowski a r2) l = true.
-apply rmatch_Union.
-done.
-move: f => [f1 | f2].
-have j: exists w1 w2, l = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2.
-apply rmatch_Concat.
-done.
-move: j => [w1 [w2 [h1 [h2 h3]]]].
-exists (a::w1).
-exists w2.
-split.
-rewrite h1.
-apply app_comm_cons.
-split.
+move: p => [w1  p1].
+move: p1 => [w2 [j [i h]]].
 simpl.
-apply IHr1.
-simpl.
-done.
-auto.
-exists nil.
-exists (a::l).
-split.
-done.
-split.
-apply contains0_ok.
-done.
+induction w1.
+right.
 apply IHr2.
-simpl. auto.
-
-move => p.
-have j: exists w1 w2, l = w1 ++ w2 /\ rmatch (Brzozowski a r1) w1 /\ rmatch r2 w2.
-apply rmatch_Concat.
+rewrite j.
 done.
-move: j => [w1 [w2 [h1 [h2 h3]]]].
-exists (a::w1).
+left.
+exists w1.
+exists w2.
+have f: (x = a) /\ (w = w1++w2).
+rewrite -app_comm_cons in j.
+apply app_inj_head.
+done.
+destruct f.
+split.
+done.
+split.
+apply IHr1.
+rewrite H.
+done.
+done.
+
+move: p => [w1  p1].
+move: p1 => [w2 [j [i h]]].
+simpl.
+induction w1.
+apply contains0_ok in i.
+have f: false.
+rewrite -e.
+done.
+done.
+exists w1.
+exists w2.
+have f: (x = a) /\ (w = w1++w2).
+rewrite -app_comm_cons in j.
+apply app_inj_head.
+done.
+destruct f.
+split.
+done.
+split.
+apply IHr1.
+rewrite H.
+done.
+done.
+
++ move => w.
+simpl.
+move => p.
+move: p => [n h].
+induction n.
+simpl in h.
+have e: (x::w) = nil.
+done.
+have f: nil <> (x::w).
+apply nil_cons.
+rewrite e in f.
+done.
+simpl in h.
+move: h => [w1 [w2 [h1 [h2 h3]]]].
+induction w1.
+induction w2.
+simpl in h1.
+have f: nil <> (x::w).
+apply nil_cons.
+rewrite h1 in f.
+done.
+
+simpl in h1.
+have f: (x = a) /\ (w = w2).
+apply app_inj_head.
+done.
+destruct f.
+apply IHn.
+rewrite H0.
+rewrite H.
+done.
+
+rewrite -(app_comm_cons w1 w2 a) in h1.
+have e: x = a /\ w = w1 ++ w2.
+apply app_inj_head.
+done.
+destruct e.
+exists w1.
 exists w2.
 split.
-rewrite h1.
-apply app_comm_cons.
+done.
 split.
-simpl.
-apply IHr1.
-simpl.
+rewrite -H in h2.
+apply IHr.
 done.
-auto.
-
-+ move => t.
-destruct t.
-exists 0.
+exists n.
 done.
-
-+ move => a l p.
-have e: exists w1 w2, l = w1 ++ w2 /\ rmatch (Brzozowski a r) w1 /\ rmatch (RE_Kleene r) w2.
-apply rmatch_Concat.
-done.
-move: e => [w1 [w2 [h1 [h2 h3]]]].
+Qed.
 
 
-Admitted.
-
-
-
-
+Lemma Brzozowski_correct2 (x : A) (w : word) (r : regexp) :
+   interp r (x :: w) -> interp (Brzozowski x r) w.
+Proof.
+apply Brzozowski_correct_aux2.
+Qed.
 
 
 (* Q18. (HARD - OPTIONAL) show that `rmatch` is complete.               *)
 
-Lemma rmatch_complete (r : regexp) (w : word):
-  interp r w -> rmatch r w.
+Lemma rmatch_complete (w : word):
+  forall r, interp r w -> rmatch r w.
+Proof.
+induction w.
+simpl.
+apply contains0_ok.
 
-Proof. todo. Qed.
+simpl.
+move => r p.
+apply IHw.
+apply Brzozowski_correct_aux2.
+done.
+Qed.
 
